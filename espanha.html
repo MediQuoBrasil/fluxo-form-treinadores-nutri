@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagrama de Flujo Pre-Anamnesis</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --canvas:#f8f9fb;--node-bg:#fff;--node-border:#d0d5dd;--node-shadow:0 1px 3px rgba(0,0,0,.08);
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-border:#ddd6fe;
+  --pink:#db2777;--pink-bg:#fdf2f8;--pink-border:#fbcfe8;
+  --teal:#0d9488;--teal-bg:#f0fdfa;--teal-border:#99f6e4;
+  --gray:#6b7280;--gray-bg:#f9fafb;--gray-border:#e5e7eb;
+  --text:#111827;--text-dim:#6b7280;--text-muted:#9ca3af;--connector:#94a3b8;
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--canvas);color:var(--text);overflow-x:hidden}
+.toolbar{position:sticky;top:0;z-index:200;background:#fff;border-bottom:1px solid #e5e7eb;padding:12px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.toolbar h1{font-size:15px;font-weight:700;flex:1}
+.toolbar .lang{font-size:11px;font-weight:600;background:var(--blue-bg);color:var(--blue);padding:4px 12px;border-radius:12px;border:1px solid var(--blue-border)}
+.toolbar .zc{display:flex;gap:4px}
+.toolbar .zc button{width:32px;height:32px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;color:var(--text-dim);display:flex;align-items:center;justify-content:center}
+.toolbar .zc button:hover{background:#f3f4f6;color:var(--text)}
+.canvas-wrapper{overflow:auto;height:calc(100vh - 57px)}
+.canvas{position:relative;min-width:1200px;padding:48px 80px 120px;background-image:radial-gradient(circle,#d0d5dd .7px,transparent .7px);background-size:20px 20px;transform-origin:top left;transition:transform .2s}
+.flow-col{display:flex;flex-direction:column;align-items:center;gap:0}
+.node{position:relative;background:var(--node-bg);border:1.5px solid var(--node-border);border-radius:10px;padding:12px 18px;min-width:260px;max-width:380px;cursor:pointer;box-shadow:var(--node-shadow);transition:all .15s;user-select:none;z-index:2}
+.node:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);transform:translateY(-1px)}
+.node-id{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px}
+.node-label{font-size:13px;font-weight:600;line-height:1.4}
+.node-type{font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:4px}
+.node.base{border-color:var(--blue-border);background:var(--blue-bg)}.node.base .node-id{background:var(--blue);color:#fff}
+.node.conditional{border-color:var(--amber-border);background:var(--amber-bg)}.node.conditional .node-id{background:var(--amber);color:#fff}
+.node.gender{border-color:var(--pink-border);background:var(--pink-bg)}.node.gender .node-id{background:var(--pink);color:#fff}
+.node.final{border-color:var(--green-border);background:var(--green-bg)}.node.final .node-id{background:var(--green);color:#fff}
+.node.sub{border-color:var(--purple-border);background:var(--purple-bg);min-width:220px}.node.sub .node-id{background:var(--purple);color:#fff}
+.diamond-wrap{display:flex;flex-direction:column;align-items:center;z-index:2}
+.diamond{width:48px;height:48px;background:var(--amber);transform:rotate(45deg);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(217,119,6,.3);transition:all .15s}
+.diamond:hover{box-shadow:0 3px 10px rgba(217,119,6,.4);transform:rotate(45deg) scale(1.08)}
+.diamond span{transform:rotate(-45deg);color:#fff;font-size:14px;font-weight:700}
+.diamond-label{font-size:11px;font-weight:600;color:var(--amber);margin-top:8px;text-align:center;max-width:220px}
+.diamond.gd{background:var(--pink)}
+.conn{width:2px;background:var(--connector);flex-shrink:0;z-index:1}.conn.s{height:20px}.conn.m{height:32px}
+.conn-arrow{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--connector);z-index:1}
+.branch-row{display:flex;gap:60px;align-items:flex-start;z-index:2}
+.branch-col{display:flex;flex-direction:column;align-items:center;gap:0}
+.branch-label{font-size:11px;font-weight:700;padding:3px 12px;border-radius:12px;margin-bottom:4px;letter-spacing:.5px}
+.branch-label.yes{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.branch-label.no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.branch-label.fem{background:var(--pink-bg);color:var(--pink);border:1px solid var(--pink-border)}
+.branch-label.masc{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.branch-label.oth{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.skip-node{font-size:11px;font-weight:600;color:var(--red);background:var(--red-bg);border:1.5px dashed var(--red-border);border-radius:8px;padding:8px 16px;text-align:center}
+.merge-dot{width:12px;height:12px;background:var(--connector);border-radius:50%;z-index:2}
+.section-sep{width:100%;max-width:600px;display:flex;align-items:center;gap:16px;margin:16px auto}
+.section-sep hr{flex:1;border:none;border-top:1.5px dashed #d0d5dd}
+.section-sep span{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap}
+.gender-three{display:flex;gap:40px;align-items:flex-start;justify-content:center;position:relative}
+.gender-three::before{content:'';position:absolute;top:0;left:calc(50% - 170px);width:340px;height:2px;background:var(--connector)}
+.gender-col{display:flex;flex-direction:column;align-items:center;gap:0;min-width:220px}
+.terminal{padding:14px 32px;border-radius:28px;font-size:14px;font-weight:700;text-align:center;z-index:2}
+.terminal.start{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.terminal.end{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.3)}
+.reusable-callout{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--teal);background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:6px;padding:3px 10px;font-family:var(--mono);margin-top:4px;cursor:pointer}
+.cond-block{display:flex;flex-direction:column;align-items:center;gap:0}
+.legend{position:fixed;bottom:20px;left:20px;z-index:100;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;box-shadow:0 4px 12px rgba(0,0,0,.08);font-size:11px;display:flex;flex-direction:column;gap:6px}
+.legend-row{display:flex;align-items:center;gap:8px}
+.legend-swatch{width:28px;height:14px;border-radius:4px;border:1.5px solid;flex-shrink:0}
+/* Panel */
+.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.panel-overlay.open{display:flex}
+.panel{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-width:680px;width:95%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column}
+.panel-header{padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-start;gap:14px}
+.panel-header .ph-id{font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;color:#fff;flex-shrink:0;margin-top:2px}
+.panel-header .ph-title{flex:1}.panel-header .ph-title h3{font-size:16px;font-weight:700;line-height:1.4}.panel-header .ph-title p{font-size:12px;color:var(--text-dim);margin-top:2px}
+.panel-close{width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);flex-shrink:0}
+.panel-close:hover{background:#f3f4f6;color:var(--text)}
+.panel-body{padding:20px 24px 24px;overflow-y:auto;flex:1}
+.panel-section{margin-bottom:18px}.panel-section:last-child{margin-bottom:0}
+.panel-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:8px}
+.panel-tags{display:flex;flex-wrap:wrap;gap:6px}
+.panel-tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;font-family:var(--mono)}
+.panel-tag.type{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.panel-tag.req{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.panel-tag.opt{background:var(--gray-bg);color:var(--gray);border:1px solid var(--gray-border)}
+.panel-tag.val{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.option-chips{display:flex;flex-wrap:wrap;gap:6px}
+.option-chip{font-size:12px;padding:6px 12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;color:var(--text);line-height:1.3}
+.option-chip.other{border-style:dashed;border-color:var(--amber-border);color:var(--amber);background:var(--amber-bg)}
+.panel-note{padding:10px 14px;background:var(--amber-bg);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;font-size:12px;color:var(--amber);line-height:1.5}
+.panel-img{max-width:100%;border-radius:8px;border:1px solid #e5e7eb;margin-top:8px}
+.panel-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-flow-step{font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;background:#f3f4f6;border:1px solid #e5e7eb}
+.panel-flow-arrow{color:var(--text-muted);font-size:14px}
+@media(max-width:900px){.canvas{min-width:auto;padding:32px 16px 80px}.branch-row{flex-direction:column;gap:20px;align-items:center}.gender-three{flex-direction:column;align-items:center;gap:20px}.gender-three::before{display:none}.legend{position:static;margin:16px}}
+</style>
+</head>
+<body>
+<div class="toolbar"><h1>📋 Formulario de Pre-Anamnesis — Diagrama de Flujo</h1><div class="zc"><button onclick="zoom(-1)">−</button><button onclick="zoom(0)">⟳</button><button onclick="zoom(1)">+</button></div><span class="lang">ES</span></div>
+<div class="canvas-wrapper"><div class="canvas" id="canvas"><div class="flow-col">
+
+<div class="terminal start">INICIO — Pre-Anamnesis</div><div class="conn m"></div><div class="conn-arrow"></div>
+<div class="section-sep"><hr><span>Sección A — Preguntas Base (P1–P19)</span><hr></div><div class="conn s"></div>
+
+<div class="node base" onclick="P('p1')"><div class="node-id">P1</div><div class="node-label">¿Cuál es su nombre completo?</div><div class="node-type">text_long · obligatorio</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p2')"><div class="node-id">P2</div><div class="node-label">¿Cuál es su fecha de nacimiento?</div><div class="node-type">text_short · DD/MM/AAAA</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p3')" style="border-color:var(--pink-border);border-width:2px"><div class="node-id" style="background:var(--pink)">P3</div><div class="node-label">¿Cómo se identifica? (cuerpo)</div><div class="node-type">dropdown · ⚡ condiciona P20/P21</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p4')"><div class="node-id">P4</div><div class="node-label">¿Cuál es su profesión?</div><div class="node-type">text_short</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p5')"><div class="node-id">P5</div><div class="node-label">Peso en kg</div><div class="node-type">dropdown · 30- até 200+</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p6')"><div class="node-id">P6</div><div class="node-label">Altura en metros</div><div class="node-type">dropdown · 1,30- até 2,05+</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p7')"><div class="node-id">P7</div><div class="node-label">¿Cuál es su objetivo?</div><div class="node-type">checkbox · 6 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p8')"><div class="node-id">P8</div><div class="node-label">¿Condición de salud?</div><div class="node-type">checkbox · exclusividad mutua</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p9')"><div class="node-id">P9</div><div class="node-label">Consumo de agua</div><div class="node-type">dropdown · incremento 250ml</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p10')"><div class="node-id">P10</div><div class="node-label">Consumo de bebida alcohólica</div><div class="node-type">dropdown · 4 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p11')"><div class="node-id">P11</div><div class="node-label">Frecuencia de evacuación</div><div class="node-type">dropdown · 13 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p12')"><div class="node-id">P12</div><div class="node-label">Horas de sueño</div><div class="node-type">dropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p13')"><div class="node-id">P13</div><div class="node-label">Calidad del sueño</div><div class="node-type">dropdown · 4 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p14')"><div class="node-id">P14</div><div class="node-label">¿Historial cardiovascular/embolia?</div><div class="node-type">dropdown · Sim/Não</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node base" onclick="P('p15_19')"><div class="node-id">P15–P19</div><div class="node-label">Recordatorio alimentario — 5 períodos</div><div class="node-type">text_long ×5 · texto + número</div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="section-sep"><hr><span>Sección B — Enrutamiento por Género (P20, P21)</span><hr></div><div class="conn s"></div>
+<div class="diamond-wrap"><div class="diamond gd" onclick="P('p3_decision')"><span>P3</span></div><div class="diamond-label">¿Qué género?</div></div><div class="conn s"></div>
+
+<div class="gender-three">
+<div class="gender-col"><div class="conn s"></div><span class="branch-label fem">♀ Feminino</span><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node gender" onclick="P('p20')"><div class="node-id">P20</div><div class="node-label">¿Embarazada?</div><div class="node-type">dropdown · 3 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node gender" onclick="P('p21f')"><div class="node-id">P21</div><div class="node-label">Composición corporal</div><div class="node-type">img femenina · 1–8</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="gender-col"><div class="conn s"></div><span class="branch-label masc">♂ Masculino</span><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="skip-node">P20 — SALTA</div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node gender" onclick="P('p21m')"><div class="node-id">P21</div><div class="node-label">Composición corporal</div><div class="node-type">img masculina · 1–8</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="gender-col"><div class="conn s"></div><span class="branch-label oth">⚧ Outro</span><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="skip-node">P20 — SALTA</div><div class="conn s"></div><div class="conn-arrow"></div>
+<div class="node gender" onclick="P('p21o')"><div class="node-id">P21</div><div class="node-label">Composición corporal</div><div class="node-type">img compilada · A–P</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+</div>
+<div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="section-sep"><hr><span>Sección C — Bloques Condicionales (P22–P31)</span><hr></div><div class="conn s"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p22')"><span>?</span></div><div class="diamond-label">P22.1 — ¿Medicamento?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p22_2')"><div class="node-id">P22.2</div><div class="node-label">Nombre medicamento(s)</div><div class="node-type">text_long</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p22_3')"><div class="node-id">P22.3</div><div class="node-label">Tiempo de uso</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P23.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p23')"><span>?</span></div><div class="diamond-label">P23.1 — ¿Suplemento?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p23_2')"><div class="node-id">P23.2</div><div class="node-label">Nombre suplemento(s)</div><div class="node-type">text_long</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p23_3')"><div class="node-id">P23.3</div><div class="node-label">Tiempo de uso</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P24.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p24')"><span>?</span></div><div class="diamond-label">P24.1 — ¿Vitamina?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p24_2')"><div class="node-id">P24.2</div><div class="node-label">Nombre vitamina(s)</div><div class="node-type">text_long</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p24_3')"><div class="node-id">P24.3</div><div class="node-label">Tiempo de uso</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P25.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p25')"><span>?</span></div><div class="diamond-label">P25.1 — ¿Alergia/Intolerancia?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p25_2')"><div class="node-id">P25.2</div><div class="node-label">¿Qué alergia?</div><div class="node-type">checkbox · 14 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P26.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p26')"><span>?</span></div><div class="diamond-label">P26.1 — ¿Actividad física?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p26_2')"><div class="node-id">P26.2</div><div class="node-label">¿Qué actividad?</div><div class="node-type">checkbox · 14 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p26_3')"><div class="node-id">P26.3</div><div class="node-label">Tiempo práctica</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p26_4')"><div class="node-id">P26.4</div><div class="node-label">Frecuencia semanal</div><div class="node-type">dropdown · 9 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P27.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p27')"><span>?</span></div><div class="diamond-label">P27.1 — ¿Lesión muscular?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p27_2')"><div class="node-id">P27.2</div><div class="node-label">¿Qué lesión?</div><div class="node-type">checkbox · 45 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p27_3')"><div class="node-id">P27.3</div><div class="node-label">Tiempo de lesión</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P28.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p28')"><span>?</span></div><div class="diamond-label">P28.1 — ¿Lesión articular?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p28_2')"><div class="node-id">P28.2</div><div class="node-label">¿Qué lesión?</div><div class="node-type">checkbox · 60 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p28_3')"><div class="node-id">P28.3</div><div class="node-label">Tiempo de lesión</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P29.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p29')"><span>?</span></div><div class="diamond-label">P29.1 — ¿Cirugía reciente?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p29_2')"><div class="node-id">P29.2</div><div class="node-label">¿Qué cirugía?</div><div class="node-type">checkbox · 77 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p29_3')"><div class="node-id">P29.3</div><div class="node-label">Tiempo cirugía</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P30.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p30')"><span>?</span></div><div class="diamond-label">P30.1 — ¿Contraindicación?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p30_2')"><div class="node-id">P30.2</div><div class="node-label">¿Qué contraindicación?</div><div class="node-type">text_long</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P31.1</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="cond-block"><div class="diamond-wrap"><div class="diamond" onclick="P('p31')"><span>?</span></div><div class="diamond-label">P31.1 — ¿Pluma adelgazante?</div></div><div class="conn s"></div>
+<div class="branch-row"><div class="branch-col"><span class="branch-label yes">SÍ</span><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p31_2')"><div class="node-id">P31.2</div><div class="node-label">¿Qué pluma/dosis?</div><div class="node-type">checkbox · 18 opções</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="node sub" onclick="P('p31_3')"><div class="node-id">P31.3</div><div class="node-label">Tiempo de uso</div><div class="node-type">dropdown</div><div class="reusable-callout" onclick="event.stopPropagation();P('time_list')">🔁 TimeDropdown</div></div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div>
+<div class="branch-col"><span class="branch-label no">NO</span><div class="conn s"></div><div class="conn-arrow"></div><div class="skip-node">→ P32</div><div class="conn s"></div><div class="conn-arrow"></div><div class="merge-dot"></div></div></div></div><div class="conn m"></div><div class="conn-arrow"></div>
+
+<div class="section-sep"><hr><span>Sección D — Final</span><hr></div><div class="conn s"></div>
+<div class="node final" onclick="P('p32')"><div class="node-id">P32</div><div class="node-label">Informaciones adicionales</div><div class="node-type">text_long · opcional</div></div><div class="conn m"></div><div class="conn-arrow"></div>
+<div class="terminal end">✅ ENVIAR → Agendamiento</div>
+
+</div></div></div>
+
+<div class="legend">
+<div class="legend-row"><div class="legend-swatch" style="background:var(--blue-bg);border-color:var(--blue-border)"></div> Pregunta base</div>
+<div class="legend-row"><div class="legend-swatch" style="background:var(--pink-bg);border-color:var(--pink-border)"></div> Enrutamiento género</div>
+<div class="legend-row"><div class="legend-swatch" style="background:var(--amber-bg);border-color:var(--amber-border)"></div> Decisión condicional</div>
+<div class="legend-row"><div class="legend-swatch" style="background:var(--purple-bg);border-color:var(--purple-border)"></div> Sub-pregunta</div>
+<div class="legend-row"><div class="legend-swatch" style="background:var(--green-bg);border-color:var(--green-border)"></div> Final / envío</div>
+<div class="legend-row"><div class="legend-swatch" style="background:var(--teal-bg);border-color:var(--teal-border)"></div> Componente reutilizable</div>
+<div class="legend-row"><div class="legend-swatch" style="background:var(--red-bg);border-color:var(--red-border);border-style:dashed"></div> Salta (skip)</div>
+<div style="margin-top:6px;font-size:10px;color:var(--text-muted);font-style:italic">Clic en cualquier nodo para detalles</div>
+</div>
+
+<div class="panel-overlay" id="po" onclick="C(event)"><div class="panel" onclick="event.stopPropagation()">
+<div class="panel-header"><div class="ph-id" id="pi">P1</div><div class="ph-title"><h3 id="pt">T</h3><p id="ps">S</p></div><button class="panel-close" onclick="C()">✕</button></div>
+<div class="panel-body" id="pb"></div>
+</div></div>
+
+<script>
+let scale=1;function zoom(d){if(d===0)scale=1;else scale=Math.max(.4,Math.min(1.5,scale+d*.1));document.getElementById('canvas').style.transform='scale('+scale+')'}
+const D={
+p1:{id:'P1',c:'#2563eb',t:'¿Cuál es su nombre completo?',s:'Pregunta base',tags:[{t:'text_long',c:'type'},{t:'obligatorio',c:'req'}]},
+p2:{id:'P2',c:'#2563eb',t:'¿Cuál es su fecha de nacimiento?',s:'Pregunta base',tags:[{t:'text_short',c:'type'},{t:'obligatorio',c:'req'},{t:'DD/MM/AAAA',c:'val'}],n:'Regex sugerida: ^\\d{2}/\\d{2}/\\d{4}$'},
+p3:{id:'P3',c:'#db2777',t:'Em relação ao seu corpo, como você se identifica?',s:'Condiciona P20/P21',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'⚡ condiciona P20/P21',c:'val'}],o:['Feminino','Masculino','Outro/Prefiro não dizer'],n:'Determina se P20 é exibida e qual imagem/opções na P21.'},
+p4:{id:'P4',c:'#2563eb',t:'¿Cuál es su profesión?',s:'Pregunta base',tags:[{t:'text_short',c:'type'},{t:'obligatorio',c:'req'}]},
+p5:{id:'P5',c:'#2563eb',t:'Qual seu peso em kgs?',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['30-','30','31','...','199','200','200+']},
+p6:{id:'P6',c:'#2563eb',t:'Qual sua altura em metros?',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['1,30-','1,30','1,31','...','2,04','2,05','2,05+'],n:'Incremento de 0,01.'},
+p7:{id:'P7',c:'#2563eb',t:'¿Cuál es su objetivo?',s:'Pregunta base',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],o:['Emagrecimento','Ganho de massa muscular','Melhora da qualidade de vida','Controle de pressão arterial','Controle de glicemia','Outro: {campo aberto}']},
+p8:{id:'P8',c:'#2563eb',t:'¿Condición de salud?',s:'Pregunta base',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'},{t:'exclusividade mútua',c:'val'}],o:['Não possuo nenhuma condição','Diabetes','Hipertensão','Doença coronariana','Hipertireoidismo','Hipotireoidismo','Câncer','Síndrome do ovário policístico','Outro: {campo aberto}'],n:'Se "Não possuo..." marcada → desabilitar demais. Se outra marcada → desabilitar "Não possuo..."'},
+p9:{id:'P9',c:'#2563eb',t:'Consumo de agua',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Menos de 500 ml','500 ml até 750 ml','750 ml até 1 L','...incremento 250ml...','5,75 L até 6 L','Acima de 6 L']},
+p10:{id:'P10',c:'#2563eb',t:'Consumo de bebida alcohólica',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Todos os dias','Até 3 vezes na semana','Raramente/Socialmente','Nunca']},
+p11:{id:'P11',c:'#2563eb',t:'Frecuencia de evacuación',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Mais de 3x/dia','3x/dia','2x/dia','1x/dia','A cada 2 dias','A cada 3 dias','A cada 4 dias','A cada 5 dias','A cada 6 dias','1x/semana','A cada 8-10 dias','A cada 11-14 dias','A cada 2 semanas ou mais']},
+p12:{id:'P12',c:'#2563eb',t:'Horas de sueño',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Menos de 3','3h','4h','5h','6h','7h','8h','9h','10h','11h','12h','Mais de 12h']},
+p13:{id:'P13',c:'#2563eb',t:'Calidad del sueño',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Sem acordar → DESCANSADO','Sem acordar → CANSADO','Acordar → DESCANSADO','Acordar → CANSADO']},
+p14:{id:'P14',c:'#2563eb',t:'¿Historial cardiovascular/embolia?',s:'Pregunta base',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No']},
+p15_19:{id:'P15–P19',c:'#2563eb',t:'Recordatorio alimentario — 5 períodos',s:'Preguntas base',tags:[{t:'text_long ×5',c:'type'},{t:'obligatorio',c:'req'},{t:'texto + número',c:'val'}],o:['P15: 05h–11h (manhã)','P16: 11h–15h (almoço)','P17: 15h–18h (tarde)','P18: 18h–22h (jantar)','P19: 22h–05h (noite)'],n:'Cada resposta precisa conter ao menos 1 letra E 1 número.'},
+p3_decision:{id:'P3',c:'#db2777',t:'Decisão — Roteamento por gênero',s:'Basado en P3',tags:[{t:'condicional',c:'val'}],h:'<div class="panel-section"><div class="panel-section-title">Fluxo por resposta</div><div style="display:flex;flex-direction:column;gap:8px"><div class="panel-flow"><span class="panel-flow-step" style="background:#fdf2f8;border-color:#fbcfe8">♀ Feminino</span><span class="panel-flow-arrow">→</span><span class="panel-flow-step">P20</span><span class="panel-flow-arrow">→</span><span class="panel-flow-step">P21 (img femenina, 1–8)</span></div><div class="panel-flow"><span class="panel-flow-step" style="background:#eff6ff;border-color:#bfdbfe">♂ Masculino</span><span class="panel-flow-arrow">→</span><span class="panel-flow-step" style="text-decoration:line-through;opacity:.5">P20 pula</span><span class="panel-flow-arrow">→</span><span class="panel-flow-step">P21 (img masculina, 1–8)</span></div><div class="panel-flow"><span class="panel-flow-step" style="background:#f5f3ff;border-color:#ddd6fe">⚧ Outro</span><span class="panel-flow-arrow">→</span><span class="panel-flow-step" style="text-decoration:line-through;opacity:.5">P20 pula</span><span class="panel-flow-arrow">→</span><span class="panel-flow-step">P21 (img compilada, A–P)</span></div></div></div>'},
+p20:{id:'P20',c:'#db2777',t:'Gestante ou recentemente?',s:'Solo si P3 = Femenino',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'⚡ só se Feminino',c:'val'}],o:['Sim, estou gestante','Não estou gestante','Não, mas estive nos últimos 2 anos']},
+p21f:{id:'P21',c:'#db2777',t:'Composición corporal — Feminino',s:'Imagen femenina',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['1','2','3','4','5','6','7','8'],h:'<div class="panel-section"><div class="panel-section-title">Imagen de referencia</div><img class="panel-img" src="https://i.postimg.cc/sgkn4Xpp/Feminino.png" alt="Feminino"></div>'},
+p21m:{id:'P21',c:'#db2777',t:'Composición corporal — Masculino',s:'Imagen masculina',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['1','2','3','4','5','6','7','8'],h:'<div class="panel-section"><div class="panel-section-title">Imagen de referencia</div><img class="panel-img" src="https://i.postimg.cc/t4KrNThS/Masculino.png" alt="Masculino"></div>'},
+p21o:{id:'P21',c:'#db2777',t:'Composición corporal — Outro',s:'Imagen compilada',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'],h:'<div class="panel-section"><div class="panel-section-title">Imagen de referencia</div><img class="panel-img" src="https://i.postimg.cc/13kWrtpT/Outro.png" alt="Outro"></div>'},
+p22:{id:'P22.1',c:'#d97706',t:'Usa algum medicamento?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P22.2 + P22.3. Não → P23.1.'},
+p22_2:{id:'P22.2',c:'#7c3aed',t:'Nome do(s) medicamento(s)',s:'Sub de P22',tags:[{t:'text_long',c:'type'},{t:'obligatorio',c:'req'}]},
+p22_3:{id:'P22.3',c:'#7c3aed',t:'Tiempo de uso medicamento(s)',s:'Sub de P22',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p23:{id:'P23.1',c:'#d97706',t:'Usa algum suplemento?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P23.2 + P23.3. Não → P24.1.'},
+p23_2:{id:'P23.2',c:'#7c3aed',t:'Nome do(s) suplemento(s)',s:'Sub de P23',tags:[{t:'text_long',c:'type'},{t:'obligatorio',c:'req'}]},
+p23_3:{id:'P23.3',c:'#7c3aed',t:'Tiempo de uso suplemento(s)',s:'Sub de P23',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p24:{id:'P24.1',c:'#d97706',t:'Usa alguma vitamina?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P24.2 + P24.3. Não → P25.1.'},
+p24_2:{id:'P24.2',c:'#7c3aed',t:'Nome da(s) vitamina(s)',s:'Sub de P24',tags:[{t:'text_long',c:'type'},{t:'obligatorio',c:'req'}]},
+p24_3:{id:'P24.3',c:'#7c3aed',t:'Tiempo de uso vitamina(s)',s:'Sub de P24',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p25:{id:'P25.1',c:'#d97706',t:'Alergia alimentar ou intolerância?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P25.2. Não → P26.1.'},
+p25_2:{id:'P25.2',c:'#7c3aed',t:'Qual alergia/intolerância?',s:'Sub de P25',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],o:['Intolerância a lactose','Intolerância ao glúten','Intolerância a frutose','Intolerância a sacarose','Intolerância ao milho','Intolerância a levedura','Alergia ao amendoim','Alergia ao trigo','Alergia ao leite','Alergia aos ovos','Alergia à soja','Alergia a peixes','Alergia a crustáceos','Outro: {campo aberto}']},
+p26:{id:'P26.1',c:'#d97706',t:'Pratica atividade física?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P26.2 + P26.3 + P26.4. Não → P27.1.'},
+p26_2:{id:'P26.2',c:'#7c3aed',t:'Qual atividade física?',s:'Sub de P26',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],o:['Musculação','Crossfit','Tênis','Dança','Futebol','Judô','Voleibol','Futsal','Basquete','Ciclismo','Caminhada/corrida','Natação','Ginástica','Outro: {campo aberto}']},
+p26_3:{id:'P26.3',c:'#7c3aed',t:'Tempo de prática',s:'Sub de P26',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p26_4:{id:'P26.4',c:'#7c3aed',t:'Frecuencia semanal',s:'Sub de P26',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'}],o:['Todos os dias, +2x/dia','Todos os dias, 2x/dia','Todos os dias, 1x/dia','6x/sem','5x/sem','4x/sem','3x/sem','2x/sem','1x/sem']},
+p27:{id:'P27.1',c:'#d97706',t:'¿Lesión muscular?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P27.2 + P27.3. Não → P28.1. 45 opções de lesões.'},
+p27_2:{id:'P27.2',c:'#7c3aed',t:'Qual lesão muscular?',s:'Sub de P27 — 45 opções',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],o:['Isquiotibiais','Bíceps femoral','Semitendíneo/Semimembranoso','Quadríceps','Reto femoral','Vasto lateral','Vasto medial','Adutores','Grácil','Pectíneo','Gastrocnêmios','Sóleo','Tríceps sural','Glúteo máximo','Glúteo médio','Glúteo mínimo','Piriforme','Tibial anterior','Fibular longo','Manguito rotador','Deltoide','Trapézio superior','Bíceps braquial','Tríceps braquial','Braquial','Flexores do punho','Extensores do punho','Pronadores/Supinadores','Peitoral maior','Peitoral menor','Serrátil anterior','Latíssimo do dorso','Romboides','Trapézio médio/inferior','Eretor da espinha','Reto abdominal','Oblíquos','Transverso do abdômen','Quadrado lombar','Multífidos','Psoas','Esternocleidomastoideo','Escalenos','Suboccipitais','Outro: {campo aberto}']},
+p27_3:{id:'P27.3',c:'#7c3aed',t:'Tiempo de lesión',s:'Sub de P27',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p28:{id:'P28.1',c:'#d97706',t:'¿Lesión articular?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P28.2 + P28.3. Não → P29.1. 60 opções de lesões.'},
+p28_2:{id:'P28.2',c:'#7c3aed',t:'Qual lesão articular?',s:'Sub de P28 — 60 opções',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],o:['Coxofemoral','Labrum acetabular','Impacto femoroacetabular','Bursite trocantérica','LCA','LCP','LCM','LCL','Menisco medial','Menisco lateral','Patela','Condromalácia patelar','Bursite pré-patelar','Entorse lateral','Entorse medial','Lesão sindesmótica','Tendinite Aquiles','Fasceíte plantar','Subtalar','Metatarsofalângica','Neuroma de Morton','Esporão de calcâneo','Glenoumeral','Acromioclavicular','Esternoclavicular','Luxação do ombro','Impacto subacromial','Bursite subacromial','Capsulite adesiva','Epicondilite lateral','Epicondilite medial','Bursite olecraniana','Luxação do cotovelo','Túnel do carpo','De Quervain','Artrose interfalângicas','Rizartrose','Dedo em gatilho','Entorse punho','Hérnia discal cervical','Artrose cervical','Torcicolo','Whiplash','Cifose torácica','Artrose facetas torácicas','Hérnia discal lombar','Artrose lombar','Espondilolistese','Estenose canal vertebral','Sacroileíte','Disfunção ATM','Bruxismo','Junção costocondral','Fratura costela','Artrite reumatoide','Osteoartrose','Artrite psoriática','Gota','Fibromialgia','Outro: {campo aberto}']},
+p28_3:{id:'P28.3',c:'#7c3aed',t:'Tiempo de lesión articular',s:'Sub de P28',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p29:{id:'P29.1',c:'#d97706',t:'¿Cirugía reciente?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P29.2 + P29.3. Não → P30.1. 77 opções de cirurgias.'},
+p29_2:{id:'P29.2',c:'#7c3aed',t:'¿Qué cirugía?',s:'Sub de P29 — 77 opções',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],n:'Lista completa com 77 cirurgias na documentação técnica (MD).'},
+p29_3:{id:'P29.3',c:'#7c3aed',t:'Tempo da cirurgia',s:'Sub de P29',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p30:{id:'P30.1',c:'#d97706',t:'Contraindicação médica para exercícios?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P30.2. Não → P31.1.'},
+p30_2:{id:'P30.2',c:'#7c3aed',t:'¿Qué contraindicación?',s:'Sub de P30',tags:[{t:'text_long',c:'type'},{t:'obligatorio',c:'req'}]},
+p31:{id:'P31.1',c:'#d97706',t:'Caneta emagrecedora (semaglutida, tirzepatida)?',s:'Bloque condicional',tags:[{t:'radio',c:'type'},{t:'obligatorio',c:'req'}],o:['Sí','No'],n:'Sim → P31.2 + P31.3. Não → P32. Nota: no doc original numeradas como P32.2/P32.3.'},
+p31_2:{id:'P31.2',c:'#7c3aed',t:'Qual caneta e dosagem?',s:'Sub de P31',tags:[{t:'checkbox',c:'type'},{t:'obligatorio (mín 1)',c:'req'}],o:['Wegovy 0,25 mg','Wegovy 0,5 mg','Wegovy 1 mg','Wegovy 1,7 mg','Wegovy 2,4 mg','Ozempic 0,25 mg','Ozempic 0,5 mg','Ozempic 1 mg','Rybelsus 3 mg','Rybelsus 7 mg','Rybelsus 14 mg','Mounjaro 2,5 mg','Mounjaro 5 mg','Mounjaro 7,5 mg','Mounjaro 10 mg','Mounjaro 12,5 mg','Mounjaro 15 mg','Outro: {campo aberto}']},
+p31_3:{id:'P31.3',c:'#7c3aed',t:'Tiempo de uso caneta',s:'Sub de P31',tags:[{t:'dropdown',c:'type'},{t:'obligatorio',c:'req'},{t:'🔁 TimeDropdown',c:'val'}]},
+p32:{id:'P32',c:'#16a34a',t:'Informaciones adicionales não abordadas',s:'Pregunta final — opcional',tags:[{t:'text_long',c:'type'},{t:'opcional',c:'opt'}]},
+time_list:{id:'🔁',c:'#0d9488',t:'Componente Reutilizável — Lista de Tempo',s:'Usado em P22.3, P23.3, P24.3, P26.3, P27.3, P28.3, P29.3, P31.3',tags:[{t:'dropdown',c:'type'},{t:'componente compartido',c:'val'}],o:['1 semana','2 semanas','3 semanas','4 semanas','2 meses','3 meses','4 meses','5 meses','6 meses','7 meses','8 meses','9 meses','10 meses','11 meses','12 meses','1 ano e 3 meses','1 ano e 6 meses','1 ano e 9 meses','2 anos','2 anos e 6 meses','3 anos','3 anos e 6 meses','4 anos','Mais de 4 anos'],n:'Recomenda-se criar componente <TimeDropdown /> reutilizável. 24 opções.'},
+};
+function P(k){const d=D[k];if(!d)return;document.getElementById('pi').textContent=d.id;document.getElementById('pi').style.background=d.c;document.getElementById('pt').textContent=d.t;document.getElementById('ps').textContent=d.s||'';let h='';if(d.tags&&d.tags.length){h+='<div class="panel-section"><div class="panel-section-title">Propiedades</div><div class="panel-tags">';d.tags.forEach(t=>h+='<span class="panel-tag '+t.c+'">'+t.t+'</span>');h+='</div></div>';}if(d.o&&d.o.length){h+='<div class="panel-section"><div class="panel-section-title">Opciones ('+d.o.length+')</div><div class="option-chips">';d.o.forEach(o=>{const x=o.toLowerCase().includes('outro')||o.includes('{campo');h+='<span class="option-chip'+(x?' other':'')+'">'+o+'</span>';});h+='</div></div>';}if(d.h)h+=d.h;if(d.n)h+='<div class="panel-section"><div class="panel-note">⚠ '+d.n+'</div></div>';document.getElementById('pb').innerHTML=h;document.getElementById('po').classList.add('open');}
+function C(e){if(!e||e.target.id==='po'||e.target.classList.contains('panel-close'))document.getElementById('po').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')C();});
+</script>
+</body>
+</html>
